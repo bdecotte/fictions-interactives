@@ -1,0 +1,201 @@
+Constant Story "Celui qui voulait décrocher les étoiles"; 
+Constant Headline "^Ecrit par Yoruk. ";
+
+
+constant NO_Score;
+
+Release 2;
+
+
+!MOTS DE DEPART : MONTAGNE ETOILE EVEQUE FROMAGE
+
+Global ParleFromage;
+
+#Include "Parser";
+#Include "VerbLib";
+#Include "FrenchG";
+
+
+[Initialise;
+	location=FaceMontagne;
+	print "^^Après avoir marché plusieurs jours dans des contrées lointaines, vous êtes enfin arrivé au pied de la montagne. LA montagne, celle qui est, soi-disant, tellement haute que l'on peut toucher les étoiles lorsqu'on est au sommet.^^";
+	lookmode=2;
+	ParleFromage=false;
+	move fromage to Secret;
+];
+
+
+object FaceMontagne "Face à la montagne"
+	with description "Une immense montagne vous fait face. Vous pouvez grimper à son sommet en continuant au nord, ou bien aller au village. Pour cela, il vous faut poursuivre le petit sentier qui vous a guidé jusqu'ici, c'est à dire en continuant à l'est.",
+	cant_go "Pourquoi partir maintenant ? Vous êtes si près du but !",
+	
+	u_to[; 
+		print "Vous commencez à gravir la montagne." ;Pause(); print "^^Après plusieurs heures de marche, vous atteignez enfin le sommet.^^";Pause();
+		return Sommet;],
+
+	n_to[;
+		print "Vous commencez à gravir la montagne." ;Pause(); print "^^Après plusieurs heures de marche, vous atteignez enfin le sommet.^^";Pause();
+		return Sommet;],
+	e_to PlaceVillage,
+has light;
+
+
+object -> Montagne "montagne"
+	with name "montagne" "objectif" "colline",
+	description "Une gigantesque montagne. Une légende prétend que l'on peut toucher les étoiles lorsqu'on est au sommet.",
+has female scenery;
+
+
+object -> sentier "sentier"
+	with name "sentier" "chemin",
+	description "Un sentier de terre battue, qui continue à l'est."
+has male scenery;
+
+
+object Sommet "Au sommet de la montagne"
+	with description "Le sommet de la montagne est en grande partie enneigé. Vous pouvez redescendre en allant au sud.",
+	s_to FaceMontagne,
+	d_to FaceMontagne,
+has light;
+
+
+object -> Etoile "Etoile"
+	with name "petite" "etoile" "brillante" "astre",
+	description "Une petite étoile. Elle vous suffira, si toutefois vous parvenez à la prendre...",
+	initial "Une petite étoile brille au dessus de vous.",
+		
+	before [;
+		Take : print "~Facile~, pensez-vous.^^Vous tendez les bras en l'air.^Un petit saut... vous parvenez à peine à effleurer l'étoile. Celle-ci, probablement craintive, s'est élevée de quelques centimètres. Elle est maintenant hors d'atteinte.^";return;
+	],
+
+
+	life [;
+		Show, Give: if (noun == fromage && fromage in player) { print "^Vous tendez le fromage à l'étoile.^^"; 
+		Pause();
+		print "Celle-ci, intéressée, s'approche de vous.^^"; 
+		Pause();
+		print "Elle s'approche encore. Vous lui donnez finalement le fromage.^^";
+		Pause();
+		print "L'étoile commence à le grignoter.^^";
+		Pause();
+		print "Vous en profitez pour l'attraper ! Cela ne semble pas la déranger.^^";
+		Pause();
+		print "Ca y est ! Vous avez réussi à décrocher une étoile. Après avoir voyagé pendant tant de semaines, vous êtes enfin parvenu à réaliser votre rêve !^^";
+		Deadflag = 2 ;remove fromage;return;};
+	],
+
+has female animate;
+
+
+Object PlaceVillage "Sur la place principale du village"
+	with description "Vous êtes sur la place principale d'un petit village. Divers commerces l'entourent : une taverne au nord, une église au sud et à l'ouest...",
+	n_to Taverne,
+	s_to Eglise,
+	w_to FaceMontagne,
+has light;
+
+
+object -> Commerces "commerces"
+	with name "taverne" "bistrot" "eglise",
+	description "Tout ces commerces semblent abandonnés... bizarre... un village fantôme ?",
+has male scenery pluralname;
+
+
+Object Taverne "Dans la taverne"
+	with description "Cet endroit semble abandonné depuis très longtemps. Tout les objets présents ici, chaises, tables, ont été bousculés, comme si les derniers occupants étaient partis précipitamment.",
+	s_to PlaceVillage,
+has light;
+
+
+object -> Desordre "desordre"
+	with name "tables" "chaises" "desordre" "bordel" "objets" "tas",
+	description "Un désordre indescriptible. Mais que c'est-il donc passé ici ?",
+
+	initial "Divers objets traînent ici.",
+	
+	before [;
+	
+		Search : if (ParleFromage == false) { print "Vous ne trouvez rien d'intéressant dans tous ces objets.^";return;} ;		
+		if (ParleFromage==true && Fromage in Secret ) {print "Parmis tous les objets divers qui se trouvent ici, vous parvenez à trouver un vieux morceau de fromage.^";move fromage to player;return;}
+
+		Take :print "Vous ne pouvez pas prendre cela !^";return;
+	],
+
+has male;
+
+
+object Eglise "A l'intérieur de l'église"
+	with description "Cet endroit ressemble à tout les autres lieux de cet étrange village : abandonné. Quelques bancs sont entassés derrière l'autel, et les vitraux ont été brisés.",
+	n_to PlaceVillage,
+has light;
+
+
+Object -> eveque "eveque"
+	with name "eveque" "pretre",
+	description "Un prêtre. Il semble le dernier être vivant de cet étrange village...",
+	initial "Un prêtre se tient assis près du confessionnal.",
+
+	life [;
+		Ask: switch (second) {
+			 
+		'montagne', 'colline' ,'legende', 'la montagne', 'la legende':
+		"~On ne vous à pas menti. La montagne permet effectivement d'atteindre les étoiles.~";
+				
+		'village', 'commerces', 'taverne', 'eglise', 'catastrophe':
+		"~Je ne peux rien vous dire. Si vous saviez.... Il est parfois préférable de ne pas connaître la vérité.~";
+					
+		'etoile', 'astre', 'etoiles': print "~Vous désirez attraper une étoile ? Peu de gens le savent, mais les étoiles raffolent du fromage...~^";ParleFromage=true;return;
+		
+		'fromage':
+		if (ParleFromage == true)
+		"~Les étoiles adorent le fromage. Pourquoi ? Je n'en sais rien. La lune n'est elle pas en fromage ?~" ;
+		print "~Si vous en cherchez, le meilleur endroit pour en trouver semble être la taverne.~^";ParleFromage=true;return;
+
+		}
+		"Le prêtre ne répond pas. Pourquoi ne pas l'interroger sur un sujet précis ?";
+		Tell: "Le prêtre lève les yeux vers vous. Il vous fixe sans ciller, mais il ne répond rien.";
+		
+		Attack, Kiss, Search: print "Laissez donc ce pauvre prêtre tranquille !^";return;
+		
+		],
+has animate;
+
+
+object fromage "fromage"
+	with name "cadeau" "fromage",
+	description "Un beau morceau de fromage de chèvre, ",
+	
+	before [;
+		Eat : print "Vous mangez le morceau de fromage.^";remove self;return;
+	],
+
+has male;
+
+
+object Secret "Lieu secret"
+	with description "Un lieu où divers objets fantastiques sont stockés avant leur utilisation.",
+has light;
+
+!ajouter le verbe "décrocher" comme synonyme de Take ?
+
+
+Verb "xyzzy" * -> xyzzy;
+
+[XyzzySub;
+	print "Ce jeu est dédicacé à tous ceux qui n'ont pas oublié leur âme d'enfant !^";
+];
+
+Verb "aide" "sos" "manuel" "infos" * -> Infos;
+
+[InfosSub;
+	print "~Celui qui voulait décrocher les étoiles~ release 2^^a été écrit en deux heures par Yoruk (Benjamin Roux) le vendredi 25 janvier 2008.^^Notes de l'auteur:^~J'avais un deux heures de libres dans mon après midi. J'en ai profité pour m'organiser une petite Rapid'Fiction : réaliser en deux heures un jeu fonctionnel en utilisant les mots suivants : MONTAGNE , ETOILE, EVEQUE et FROMAGE. Deux heures plus tard, j'ai terminé ce jeu. Bon amusement ! Si vous souhaitez me contacter, vous pouvez m'envoyer un courriel à benjamin.roux arobase laposte.net. Vous pouvez également vous rendre sur le site ifiction.free.fr pour tout savoir sur les fictions interactives.~^^";
+];
+
+
+[Pause notNeeded;
+	@read_char 1 notNeeded;
+	rtrue;
+];
+
+
+!---FIN DE FICHIER------
